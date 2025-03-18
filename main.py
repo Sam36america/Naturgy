@@ -31,7 +31,7 @@ class ExtratorFaturas:
                     informacoes[chave] = match.group(1) if match.groups() else match.group(0)
                     break  # Para de procurar assim que encontrar uma correspondência
             if chave not in informacoes:
-                print(f"Valor não encontrado para: {chave}")
+                print(f"❌ Valor não encontrado para: {chave}")
                 return None  # Retorna None se algum valor não for encontrado
         return informacoes
 
@@ -50,18 +50,18 @@ def extrair_texto(caminho_do_pdf):
                     texto_pagina = re.sub(r'\s{1,2,}', ' ', texto_pagina).strip()
                     texto_completo += texto_pagina + ' '
                 else:
-                    print(f"Aviso: Não foi possível extrair texto de uma página do PDF: {caminho_do_pdf}")
+                    print(f"⚠️ Não foi possível extrair texto de uma página do PDF: {caminho_do_pdf}")
             
             # Remove espaços extras no início e no final
             texto_completo = texto_completo.strip()
             
             if not texto_completo:
-                print(f"Erro: Nenhum texto extraído do PDF {caminho_do_pdf}")
+                print(f"❌ Nenhum texto extraído do PDF {caminho_do_pdf}")
             else:
-                print(f"Texto extraído com sucesso...")  # Mostra os primeiros 500 caracteres
+                print(f"✅ Texto extraído com sucesso...")  # Mostra os primeiros 500 caracteres
     
     except Exception as e:
-        print(f"Erro ao abrir ou ler o PDF {caminho_do_pdf}: {e}")
+        print(f"❌ Erro ao abrir ou ler o PDF {caminho_do_pdf}: {e}")
         texto_completo = ''
     
     return texto_completo
@@ -73,19 +73,19 @@ def todos_campos_preenchidos(informacoes):
     campos_obrigatorios = ['cnpj', 'valor_total', 'volume_total', 'data_emissao', 'data_inicio', 'data_fim', 'numero_documento', 'valor_icms', 'correcao_pcs', 'codigo_cliente']
     for campo in campos_obrigatorios:
         if campo not in informacoes or not informacoes[campo]:
-            print(f"Campo obrigatório '{campo}' está faltando ou vazio.")
+            print(f"❌ Campo obrigatório '{campo}' está faltando ou vazio.")
             return False
     return True
 
 def adicionar_na_planilha(informacoes, caminho_planilha, nome_arquivo):
     if not todos_campos_preenchidos(informacoes):
-        print("Não foi possível adicionar à planilha devido a campos faltantes ou vazios.")
+        print("❌ Não foi possível adicionar à planilha devido a campos faltantes ou vazios.")
         return False
 
     try:
         df = pd.read_excel(caminho_planilha)
     except FileNotFoundError:
-        print(f"O arquivo '{caminho_planilha}' não foi encontrado. Criando um novo.")
+        print(f"ℹ️ O arquivo '{caminho_planilha}' não foi encontrado. Criando um novo.")
         df = pd.DataFrame(columns=['CNPJ', 'VALOR TOTAL', 'VOLUME TOTAL', 'DATA EMISSAO', 'DATA INICIO', 'DATA FIM', 'NUMERO FATURA', 'VALOR ICMS', 'CORRECAO PCS', 'CODIGO CLIENTE', 'DISTRIBUIDORA', 'NOME DO ARQUIVO'])
     
     cnpj = informacoes['cnpj']
@@ -96,7 +96,7 @@ def adicionar_na_planilha(informacoes, caminho_planilha, nome_arquivo):
     valor_icms = pd.to_numeric(informacoes['valor_icms'].replace('.', '').replace(',', '.'))
 
     if registro_existe(df, cnpj, data_inicio, data_fim, valor_total):
-        print(f"Registro duplicado encontrado. Não será inserido.")
+        print(f"❌ Registro duplicado encontrado. Não será inserido.")
         return False 
 
     valor_total = pd.to_numeric(str(informacoes.get('valor_total', '')).replace('.', '').replace(',', '.'), errors='coerce')
@@ -120,7 +120,7 @@ def adicionar_na_planilha(informacoes, caminho_planilha, nome_arquivo):
     }])
     df = pd.concat([df, nova_linha], ignore_index=True)
     df.to_excel(caminho_planilha, index=False)
-    print("Dados adicionados com sucesso à planilha.")
+    print("✅ Dados adicionados com sucesso à planilha.")
     return True
 
 def mover_arquivo(origem, destino):
@@ -151,19 +151,19 @@ def verificar_linha_preenchida(caminho_planilha, informacoes):
                     return False
         return False  # Retorna False se a linha correspondente não for encontrada
     except Exception as e:
-        print(f"Erro ao verificar a planilha: {e}")
+        print(f"❌ Erro ao verificar a planilha: {e}")
         return False
 
 def main(file_path, pdf_file, caminho_planilha):
     texto_pypdf = extrair_texto(pdf_file)
     if not texto_pypdf:
-        print(f"Erro ao extrair texto do PDF: {pdf_file}")
+        print(f"❌ Erro ao extrair texto do PDF: {pdf_file}")
         return
 
     extrator = ExtratorFaturas()
     informacoes = extrator.extrair_informacoes(texto_pypdf)
     if not informacoes:
-        print(f"Nenhuma informação extraída do PDF: {pdf_file}")
+        print(f"❌ Nenhuma informação extraída do PDF: {pdf_file}")
         return
 
     nome_arquivo = os.path.basename(pdf_file)
@@ -174,7 +174,7 @@ def main(file_path, pdf_file, caminho_planilha):
         destino = os.path.join(diretorio_destino, nome_arquivo)
         mover_arquivo(pdf_file, destino)
     else:
-        print('Arquivo não foi inserido na planilha devido a dados faltantes ou duplicados. Não será movido.')
+        print('❌ Arquivo não foi inserido na planilha devido a dados faltantes ou duplicados. Não será movido.')
 
 # Exemplo de uso
 file_path = r'G:\QUALIDADE\Códigos\Leitura de Faturas Gás\Códigos\Naturgy RJ\Faturas'
